@@ -1,16 +1,27 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;  //Restore nuget packages
 using MyClasses;
 using System;
+using System.IO;
 
 namespace MyClassesTest
 {
     [TestClass]
-    public class FileProcessTest
+    public class FileProcessTest : TestBase
     {
+        protected string _GoodFileName;
         private const string BAD_FILE_NAME = @"C:\Windows\Xablau.exe";
-        private const string GOOD_FILE_NAME = @"C:\Windows\Regedit.exe";
 
         public TestContext TestContext { get; set; }
+
+        protected void SetGoodFileName()
+        {
+            _GoodFileName = TestContext.Properties["GoodFileName"].ToString();
+            if (_GoodFileName.Contains("[AppPath]"))
+            {
+                _GoodFileName = _GoodFileName.Replace("[AppPath]",
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData));
+            }
+        }
 
         [TestMethod]
         public void FileNameDoesExists()
@@ -18,9 +29,19 @@ namespace MyClassesTest
             FileProcess fp = new FileProcess();
             bool fromCall;
 
-            TestContext.WriteLine(@"Checking file " + GOOD_FILE_NAME);
+            SetGoodFileName();
+
+            //Criando um _GoodFileName
+            if (!string.IsNullOrEmpty(_GoodFileName))
+                File.AppendAllText(_GoodFileName,"Qualquer informação");
+
+            TestContext.WriteLine(@"Checking file " + _GoodFileName);
 
             fromCall = fp.FileExists(@"C:\Windows\Regedit.exe");
+
+            //Deletando _GoodFileName
+            if (File.Exists(_GoodFileName))
+                File.Delete(_GoodFileName);
 
             Assert.IsTrue(fromCall);                
         }
@@ -53,9 +74,9 @@ namespace MyClassesTest
             FileProcess fp = new FileProcess();
             try
             {
-                fp.FileExists("File");
+                fp.FileExists("");
             }
-            catch
+            catch(ArgumentNullException)
             {
                 return;
             }
